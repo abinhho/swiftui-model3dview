@@ -172,7 +172,7 @@ extension Model3DView {
 		private let lightNode = SCNNode()
 		private let scene = SCNScene()
 
-		private var loadSceneCancellable: AnyCancellable?
+		private var loadSceneCancellable: (any Cancellable)?
 		private var loadedScene: SCNScene? // Keep a reference for `AsyncResourcesCache`.
 
 		fileprivate var onLoadHandlers: [(ModelLoadState) -> Void] = []
@@ -203,7 +203,6 @@ extension Model3DView {
 
 			lightNode.light = SCNLight()
         		lightNode.light?.type = .directional
-			// lightNode.position = SCNVector3(x: 0, y: 0, z: 20)
 			
 			cameraNode.addChildNode(lightNode)
 
@@ -254,7 +253,7 @@ extension Model3DView {
 				}
 				.sink { completion in
 					if case .failure(_) = completion {
-						DispatchQueue.main.async {
+						Task { @MainActor in
 							for onLoad in self.onLoadHandlers {
 								onLoad(.failure)
 							}
@@ -267,7 +266,7 @@ extension Model3DView {
 			}
 			else if case .reference(let scene) = sceneFile {
 				loadSceneCancellable = Just(scene)
-					.receive(on: DispatchQueue.global())
+					.receive(on: RunLoop.main)
 					.sink { [weak self] scene in
 						self?.loadedScene = scene
 						self?.prepareScene()
@@ -279,7 +278,7 @@ extension Model3DView {
 			contentNode.childNodes.forEach { $0.removeFromParentNode() }
 
 			// Copy the root node(s) of the scene, copy their geometry and place them in the coordinator's scene.
-			guard let loadedScene = loadedScene else {
+			guard let loadedScene else {
 				return
 			}
 
@@ -307,7 +306,7 @@ extension Model3DView {
 
 			contentNode.addChildNode(copiedRoot)
 
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				for onLoad in self.onLoadHandlers {
 					onLoad(.success)
 				}
@@ -325,7 +324,7 @@ extension Model3DView {
 			guard asset != skybox else {
 				return
 			}
-			
+
 			if let asset = asset {
 				scene.background.contents = Self.imageCache.resource(for: asset) { url in
 					PlatformImage(contentsOfFile: url.path)
@@ -334,7 +333,7 @@ extension Model3DView {
 			else {
 				scene.background.contents = nil
 			}
-			
+
 			skybox = asset
 		}
 		
@@ -379,10 +378,6 @@ extension Model3DView.SceneCoordinator: SCNSceneRendererDelegate {
 		let translation = Matrix4x4(translation: camera.position + contentCenter)
 		let cameraTransform = translation * rotation
 		cameraNode.simdTransform = cameraTransform
-
-		print("xxx", camera.position.x)
-
-		//lightNode.position = SCNVector3(x: camera.position.x * 10, y: camera.position.y * 10, z: camera.position.z * 10)
 	}
 }
 
