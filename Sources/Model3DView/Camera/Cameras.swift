@@ -11,6 +11,7 @@ import simd
 public protocol Camera {
 	var position: Vector3 { get set }
 	var rotation: Euler { get set }
+	var isRotating: Bool { get set }
 	func projectionMatrix(viewport: CGSize) -> Matrix4x4
 }
 
@@ -69,6 +70,8 @@ public struct OrthographicCamera: Camera, Equatable {
 	public var near: Float
 	public var far: Float
 	public var scale: Float
+
+	public var isRotating: Bool = false
 	
 	public init(
 		position: Vector3 = [0, 0, 2],
@@ -97,6 +100,8 @@ public struct PerspectiveCamera: Camera, Equatable {
 	public var fov: Angle
 	public var near: Float
 	public var far: Float
+
+	public var isRotating: Bool = false
 	
 	public init(
 		position: Vector3 = [0, 0, 2],

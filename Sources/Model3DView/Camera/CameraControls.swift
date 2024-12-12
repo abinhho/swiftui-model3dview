@@ -47,6 +47,7 @@ public struct OrbitControls<C: Camera>: CameraControls {
 	public var maxYaw: Angle
 	public var minZoom: CGFloat
 	public var maxZoom: CGFloat
+
 	public private(set) var friction: CGFloat
 
 	private let center: Vector3 = [0, 0, 0]
@@ -147,6 +148,12 @@ public struct OrbitControls<C: Camera>: CameraControls {
 		velocityPan.x *= deceleration
 		velocityPan.y *= deceleration
 		velocityZoom *= deceleration
+
+		if abs(velocityPan.x) > 2 {
+			camera.wrappedValue.isRotating = true
+		} else {
+			camera.wrappedValue.isRotating = false
+		}
 	}
 
 	public func body(content: Content) -> some View {
